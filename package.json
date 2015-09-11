@@ -1,0 +1,22 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "A simple icon generator service, that takes layers and tints as parameters, and returns and icon ressource.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Daniel-Nielsen/IconService.git"
+  },
+  "author": "Daniel Nielsen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Daniel-Nielsen/IconService/issues"
+  },
+  "homepage": "https://github.com/Daniel-Nielsen/IconService",
+  "dependencies": {
+    "express": "^4.13.3"
+  }
+}
