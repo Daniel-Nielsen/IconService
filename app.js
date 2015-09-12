@@ -1,6 +1,5 @@
 var express = require('express');
 var app = express();
-var request = require('request');
 var http = require('http');
 var lwip = require("lwip");
 
