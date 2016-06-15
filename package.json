@@ -17,6 +17,9 @@
   },
   "homepage": "https://github.com/Daniel-Nielsen/IconService",
   "dependencies": {
-    "express": "^4.13.3"
+    "express": "^4.13.4",
+    "lwip": "0.0.9",
+    "pn": "^1.0.0",
+    "svg2png": "^3.0.0"
   }
 }

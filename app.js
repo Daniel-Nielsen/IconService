@@ -2,6 +2,8 @@ var express = require('express');
 var app = express();
 var http = require('http');
 var lwip = require("lwip");
+var pn = require("pn"); // https://www.npmjs.com/package/pn 
+var svg2png = require("svg2png");
 
 app.get('/', function(req, res) {
     req.query.layer = req.query.layer || [];
@@ -110,8 +112,8 @@ app.get('/', function(req, res) {
 });
 
 var server = app.listen(process.env.PORT, function() {
-    var host = process.env.IP;
-    var port = process.env.PORT;
+    var host = 'localhost';
+    var port = 1339;
 
 
     console.log('Example app listening at http://%s:%s', host, port);
