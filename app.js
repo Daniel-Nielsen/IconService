@@ -2,17 +2,26 @@ var express = require('express');
 var app = express();
 var http = require('http');
 var lwip = require("lwip");
-var pn = require("pn"); // https://www.npmjs.com/package/pn 
+var fs = require("pn/fs"); // https://www.npmjs.com/package/pn
 var svg2png = require("svg2png");
+
+app.use(express.static('public'));
 
 app.get('/', function(req, res) {
     req.query.layer = req.query.layer || [];
     req.query.tint = req.query.tint || [];
+    req.query.size = req.query.size || [];
     var layers = req.query.layer.push ? req.query.layer : [req.query.layer];
     var tints = req.query.tint.push ? req.query.tint : [req.query.tint];
-    var size = req.query.size;
+    var sizes = req.query.size.push ? req.query.size : [req.query.size];
+    var scale = req.query.scale ? parseInt(req.query.scale) : 1;
 
+    
     var renderResult = function(masterImage, layerIndex) {
+
+        var size = sizes[layerIndex] ? parseInt(sizes[layerIndex]) : sizes[0];
+        var scaledSize = Math.round(size * scale);
+
         function toBuffer() {
             masterImage.toBuffer('png', function(err, buffer) {
                 if (err) {
@@ -29,7 +38,7 @@ app.get('/', function(req, res) {
 
         if (layerIndex > layers.length - 1) {
             if (size) {
-                masterImage.resize(parseInt(size), parseInt(size), 'lanczos', function(err, image) {
+                masterImage.resize(scaledSize, scaledSize, 'lanczos', function(err, image) {
                     if (err) return res.send(err);
                     masterImage = image;
                     toBuffer();
@@ -56,53 +65,66 @@ app.get('/', function(req, res) {
                 //if (err) {
                 //  res.send(err);
                 //}
-                lwip.open(new Buffer(imagedata, 'binary'), 'png', function(err, image) {
-                    if (err) {
-                        res.send(err);
-                    }
+                
+                function processBuffer(buffer) {
+                    lwip.open(buffer, 'png', function(err, image) {
+                        if (err) {
+                            res.send(err);
+                        }
 
-                    if (tints && tints[layerIndex]) {
-                        var tint = tints[layerIndex];
-                        (function setTint(x, y) {
-                            var color = image.getPixel(x, y);
-                            var tintColor = hexToRgb(tint)
-                            tintColor.a = color.a;
-                            image.setPixel(x, y, tintColor, function() {
-                                if (++x < image.width())
-                                    setTint(x, y);
-                                else if (++y < image.height())
-                                    setTint(0, y);
-                                else collapseImage();
-                            });
+                        if (tints && tints[layerIndex]) {
+                            var tint = tints[layerIndex];
+                            (function setTint(x, y) {
+                                var color = image.getPixel(x, y);
+                                var tintColor = hexToRgb(tint)
+                                tintColor.a = color.a;
+                                image.setPixel(x, y, tintColor, function() {
+                                    if (++x < image.width())
+                                        setTint(x, y);
+                                    else if (++y < image.height())
+                                        setTint(0, y);
+                                    else collapseImage();
+                                });
 
-                        })(0, 0);
-                    }
-                    else {
-                        collapseImage();
-                    }
+                            })(0, 0);
+                        }
+                        else {
+                            collapseImage();
+                        }
 
-                    function collapseImage() {
-                        if (masterImage) {
-                            var x = (masterImage.width() - image.width()) * 0.5;
-                            var y = (masterImage.height() - image.height()) * 0.5;
-                            masterImage.paste(x, y, image, function(err, image) {
-                                if (err) {
-                                    res.send(err);
-                                }
+                        function collapseImage() {
+                            if (masterImage) {
+                                var x = (masterImage.width() - image.width()) * 0.5;
+                                var y = (masterImage.height() - image.height()) * 0.5;
+                                masterImage.paste(x, y, image, function(err, image) {
+                                    if (err) {
+                                        res.send(err);
+                                    }
+                                    masterImage = image;
+
+                                    renderResult(masterImage, ++layerIndex);
+
+                                });
+                            }
+                            else {
                                 masterImage = image;
 
                                 renderResult(masterImage, ++layerIndex);
 
-                            });
+                            }
                         }
-                        else {
-                            masterImage = image;
+                    });
+                } 
+                
+                if (uri.indexOf('.svg') == uri.length - 4) {
+                    svg2png(new Buffer(imagedata), { width: scaledSize, height: scaledSize })
+                        //.then(imageBuffer => fs.writeFile("dest.png", imageBuffer))
+                        .then(imageBuffer => processBuffer(imageBuffer))
+                        .catch(e => console.error(e));
+                } else {
+                    processBuffer(new Buffer(imagedata, 'binary'));
+                }
 
-                            renderResult(masterImage, ++layerIndex);
-
-                        }
-                    }
-                });
             });
         });
     }
@@ -111,11 +133,10 @@ app.get('/', function(req, res) {
 
 });
 
-var server = app.listen(process.env.PORT, function() {
-    var host = 'localhost';
-    var port = 1339;
+var host = 'localhost';
+var port = process.env.PORT || 3000;
 
-
+var server = app.listen(port, function() {
     console.log('Example app listening at http://%s:%s', host, port);
 });
 
