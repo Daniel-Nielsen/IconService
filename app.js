@@ -133,7 +133,7 @@ app.get('/', function(req, res) {
 
 });
 
-var host = 'localhost';
+var host = process.env.IP || 'localhost';
 var port = process.env.PORT || 3000;
 
 var server = app.listen(port, function() {
